@@ -40,15 +40,52 @@ class ApiClient {
 
     try {
       const response = await fetch(url, config);
-      const data = await response.json();
-
+      
+      // Check if response is ok before trying to parse JSON
       if (!response.ok) {
-        throw new Error(data.message || `HTTP error! status: ${response.status}`);
+        // Try to parse error response, but handle cases where it's not JSON
+        let errorMessage = `HTTP error! status: ${response.status}`;
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorMessage;
+        } catch (parseError) {
+          // If response is not JSON (like "Offline - ..."), use status text
+          errorMessage = response.statusText || errorMessage;
+        }
+        throw new Error(errorMessage);
       }
 
-      return data;
+      // Check if response has content before parsing JSON
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        const data = await response.json();
+        return data;
+      } else {
+        // If response is not JSON, return a generic success response
+        return {
+          status: 'success',
+          message: 'Request completed',
+          data: await response.text()
+        };
+      }
     } catch (error) {
       console.error('API request failed:', error);
+      
+      // Handle specific error cases
+      if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+        return {
+          status: 'error',
+          message: 'Cannot connect to server. Please check if the backend is running.',
+        };
+      }
+      
+      if (error instanceof SyntaxError && error.message.includes('Unexpected token')) {
+        return {
+          status: 'error',
+          message: 'Server returned invalid response. Please check if the backend is running.',
+        };
+      }
+      
       return {
         status: 'error',
         message: error instanceof Error ? error.message : 'Network error. Please try again.',
@@ -130,4 +167,121 @@ export const dashboardApi = {
   
   getNotifications: () =>
     apiClient.get('/dashboard/notifications'),
+};
+
+// Fee Management API functions
+export const feeApi = {
+  getFees: (params?: any) =>
+    apiClient.get('/fees', params),
+  
+  getFee: (id: string) =>
+    apiClient.get(`/fees/${id}`),
+  
+  createFee: (data: any) =>
+    apiClient.post('/fees', data),
+  
+  recordPayment: (id: string, data: any) =>
+    apiClient.post(`/fees/${id}/payment`, data),
+  
+  getFeeStats: () =>
+    apiClient.get('/fees/stats/overview'),
+  
+  getOverdueFees: () =>
+    apiClient.get('/fees/overdue'),
+  
+  getStudentFees: (studentId: string, params?: any) =>
+    apiClient.get(`/fees/student/${studentId}`, params),
+};
+
+// Hostel Management API functions
+export const hostelApi = {
+  getHostels: (params?: any) =>
+    apiClient.get('/hostels', params),
+  
+  getHostel: (id: string) =>
+    apiClient.get(`/hostels/${id}`),
+  
+  createHostel: (data: any) =>
+    apiClient.post('/hostels', data),
+  
+  updateHostel: (id: string, data: any) =>
+    apiClient.put(`/hostels/${id}`, data),
+  
+  getRooms: (hostelId: string, params?: any) =>
+    apiClient.get(`/hostels/${hostelId}/rooms`, params),
+  
+  createRoom: (hostelId: string, data: any) =>
+    apiClient.post(`/hostels/${hostelId}/rooms`, data),
+  
+  getAllocations: (params?: any) =>
+    apiClient.get('/hostels/allocations', params),
+  
+  createAllocation: (data: any) =>
+    apiClient.post('/hostels/allocations', data),
+  
+  updateAllocation: (id: string, data: any) =>
+    apiClient.put(`/hostels/allocations/${id}`, data),
+};
+
+// Library Management API functions
+export const libraryApi = {
+  getBooks: (params?: any) =>
+    apiClient.get('/library/books', params),
+  
+  getBook: (id: string) =>
+    apiClient.get(`/library/books/${id}`),
+  
+  createBook: (data: any) =>
+    apiClient.post('/library/books', data),
+  
+  updateBook: (id: string, data: any) =>
+    apiClient.put(`/library/books/${id}`, data),
+  
+  getIssueRecords: (params?: any) =>
+    apiClient.get('/library/issues', params),
+  
+  issueBook: (data: any) =>
+    apiClient.post('/library/issues', data),
+  
+  returnBook: (id: string, data: any) =>
+    apiClient.put(`/library/issues/${id}/return`, data),
+  
+  renewBook: (id: string, data: any) =>
+    apiClient.put(`/library/issues/${id}/renew`, data),
+  
+  getLibraryStats: () =>
+    apiClient.get('/library/stats'),
+};
+
+// Examination Management API functions
+export const examinationApi = {
+  getSubjects: (params?: any) =>
+    apiClient.get('/examinations/subjects', params),
+  
+  createSubject: (data: any) =>
+    apiClient.post('/examinations/subjects', data),
+  
+  updateSubject: (id: string, data: any) =>
+    apiClient.put(`/examinations/subjects/${id}`, data),
+  
+  getExams: (params?: any) =>
+    apiClient.get('/examinations/exams', params),
+  
+  createExam: (data: any) =>
+    apiClient.post('/examinations/exams', data),
+  
+  updateExam: (id: string, data: any) =>
+    apiClient.put(`/examinations/exams/${id}`, data),
+  
+  getResults: (params?: any) =>
+    apiClient.get('/examinations/results', params),
+  
+  createResult: (data: any) =>
+    apiClient.post('/examinations/results', data),
+  
+  updateResult: (id: string, data: any) =>
+    apiClient.put(`/examinations/results/${id}`, data),
+  
+  getExamStats: () =>
+    apiClient.get('/examinations/stats'),
 };

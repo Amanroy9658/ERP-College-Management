@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { authApi } from '../../utils/api';
+import { useAuth } from './AuthProvider';
 import { 
   Eye, 
   EyeOff, 
@@ -26,6 +27,7 @@ interface LoginFormData {
 
 export default function LoginPage() {
   const router = useRouter();
+  const { login } = useAuth();
   const [formData, setFormData] = useState<LoginFormData>({
     email: '',
     password: ''
@@ -48,41 +50,14 @@ export default function LoginPage() {
     setError('');
 
     try {
-      const response = await authApi.login(formData.email, formData.password);
-
-      if (response.status === 'success' && response.data) {
-        // Store token and user data
-        localStorage.setItem('token', response.data.token);
-        localStorage.setItem('user', JSON.stringify(response.data.user));
-        
-        // Redirect based on role
-        const role = response.data.user.role;
-        switch (role) {
-          case 'admin':
-            router.push('/admin/dashboard');
-            break;
-          case 'student':
-            router.push('/student/dashboard');
-            break;
-          case 'teacher':
-            router.push('/teacher/dashboard');
-            break;
-          case 'staff':
-            router.push('/staff/dashboard');
-            break;
-          case 'librarian':
-            router.push('/librarian/dashboard');
-            break;
-          case 'warden':
-            router.push('/warden/dashboard');
-            break;
-          default:
-            router.push('/dashboard');
-        }
-      } else {
-        setError(response.message || 'Login failed');
+      console.log('Attempting login with:', formData.email);
+      const success = await login(formData.email, formData.password);
+      
+      if (!success) {
+        setError('Login failed. Please check your credentials.');
       }
     } catch (err) {
+      console.error('Login error:', err);
       setError('Network error. Please try again.');
     } finally {
       setLoading(false);

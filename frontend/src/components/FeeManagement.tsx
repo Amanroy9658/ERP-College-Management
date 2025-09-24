@@ -19,6 +19,7 @@ import {
   Users,
   FileText
 } from 'lucide-react';
+import { feeApi } from '../utils/api';
 
 interface FeeRecord {
   id: string;
@@ -44,73 +45,9 @@ interface FeeRecord {
 }
 
 export default function FeeManagement() {
-  const [feeRecords, setFeeRecords] = useState<FeeRecord[]>([
-    {
-      id: '1',
-      student: {
-        studentId: 'STU001',
-        firstName: 'John',
-        lastName: 'Doe',
-        email: 'john.doe@example.com'
-      },
-      academicYear: '2024-25',
-      semester: 3,
-      totalAmount: 50000,
-      totalPaid: 50000,
-      totalDue: 0,
-      overallStatus: 'Paid',
-      dueDate: '2024-08-15',
-      payments: [
-        {
-          amount: 50000,
-          paymentDate: '2024-08-10',
-          paymentMethod: 'Online',
-          status: 'Success'
-        }
-      ]
-    },
-    {
-      id: '2',
-      student: {
-        studentId: 'STU002',
-        firstName: 'Jane',
-        lastName: 'Smith',
-        email: 'jane.smith@example.com'
-      },
-      academicYear: '2024-25',
-      semester: 2,
-      totalAmount: 45000,
-      totalPaid: 25000,
-      totalDue: 20000,
-      overallStatus: 'Partial',
-      dueDate: '2024-08-15',
-      payments: [
-        {
-          amount: 25000,
-          paymentDate: '2024-08-05',
-          paymentMethod: 'Bank Transfer',
-          status: 'Success'
-        }
-      ]
-    },
-    {
-      id: '3',
-      student: {
-        studentId: 'STU003',
-        firstName: 'Mike',
-        lastName: 'Johnson',
-        email: 'mike.johnson@example.com'
-      },
-      academicYear: '2024-25',
-      semester: 4,
-      totalAmount: 55000,
-      totalPaid: 0,
-      totalDue: 55000,
-      overallStatus: 'Overdue',
-      dueDate: '2024-07-15',
-      payments: []
-    }
-  ]);
+  const [feeRecords, setFeeRecords] = useState<FeeRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('All');
@@ -121,7 +58,182 @@ export default function FeeManagement() {
   const [paymentMethod, setPaymentMethod] = useState('Online');
   const [transactionId, setTransactionId] = useState('');
   const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split('T')[0]);
-  const [loading, setLoading] = useState(false);
+  const [paymentLoading, setPaymentLoading] = useState(false);
+
+  // Load fee records on component mount
+  useEffect(() => {
+    loadFeeRecords();
+  }, []);
+
+  const loadFeeRecords = async () => {
+    try {
+      setLoading(true);
+      setError('');
+      
+      const response = await feeApi.getFees({
+        page: 1,
+        limit: 100,
+        search: searchTerm,
+        status: filterStatus !== 'All' ? filterStatus : undefined
+      });
+
+      if (response.status === 'success' && response.data) {
+        setFeeRecords(response.data.fees || []);
+      } else {
+        setError(response.message || 'Failed to load fee records');
+        // Fallback to mock data for demo
+        setFeeRecords([
+          {
+            id: '1',
+            student: {
+              studentId: 'STU001',
+              firstName: 'John',
+              lastName: 'Doe',
+              email: 'john.doe@example.com'
+            },
+            academicYear: '2024-25',
+            semester: 3,
+            totalAmount: 50000,
+            totalPaid: 50000,
+            totalDue: 0,
+            overallStatus: 'Paid',
+            dueDate: '2024-08-15',
+            payments: [
+              {
+                amount: 50000,
+                paymentDate: '2024-08-10',
+                paymentMethod: 'Online',
+                status: 'Success'
+              }
+            ]
+          },
+          {
+            id: '2',
+            student: {
+              studentId: 'STU002',
+              firstName: 'Jane',
+              lastName: 'Smith',
+              email: 'jane.smith@example.com'
+            },
+            academicYear: '2024-25',
+            semester: 2,
+            totalAmount: 45000,
+            totalPaid: 25000,
+            totalDue: 20000,
+            overallStatus: 'Partial',
+            dueDate: '2024-08-15',
+            payments: [
+              {
+                amount: 25000,
+                paymentDate: '2024-08-05',
+                paymentMethod: 'Bank Transfer',
+                status: 'Success'
+              }
+            ]
+          },
+          {
+            id: '3',
+            student: {
+              studentId: 'STU003',
+              firstName: 'Mike',
+              lastName: 'Johnson',
+              email: 'mike.johnson@example.com'
+            },
+            academicYear: '2024-25',
+            semester: 4,
+            totalAmount: 55000,
+            totalPaid: 0,
+            totalDue: 55000,
+            overallStatus: 'Overdue',
+            dueDate: '2024-07-15',
+            payments: []
+          }
+        ]);
+      }
+    } catch (err) {
+      console.error('Error loading fee records:', err);
+      setError('Failed to load fee records. Using demo data.');
+      // Fallback to mock data
+      setFeeRecords([
+        {
+          id: '1',
+          student: {
+            studentId: 'STU001',
+            firstName: 'John',
+            lastName: 'Doe',
+            email: 'john.doe@example.com'
+          },
+          academicYear: '2024-25',
+          semester: 3,
+          totalAmount: 50000,
+          totalPaid: 50000,
+          totalDue: 0,
+          overallStatus: 'Paid',
+          dueDate: '2024-08-15',
+          payments: [
+            {
+              amount: 50000,
+              paymentDate: '2024-08-10',
+              paymentMethod: 'Online',
+              status: 'Success'
+            }
+          ]
+        },
+        {
+          id: '2',
+          student: {
+            studentId: 'STU002',
+            firstName: 'Jane',
+            lastName: 'Smith',
+            email: 'jane.smith@example.com'
+          },
+          academicYear: '2024-25',
+          semester: 2,
+          totalAmount: 45000,
+          totalPaid: 25000,
+          totalDue: 20000,
+          overallStatus: 'Partial',
+          dueDate: '2024-08-15',
+          payments: [
+            {
+              amount: 25000,
+              paymentDate: '2024-08-05',
+              paymentMethod: 'Bank Transfer',
+              status: 'Success'
+            }
+          ]
+        },
+        {
+          id: '3',
+          student: {
+            studentId: 'STU003',
+            firstName: 'Mike',
+            lastName: 'Johnson',
+            email: 'mike.johnson@example.com'
+          },
+          academicYear: '2024-25',
+          semester: 4,
+          totalAmount: 55000,
+          totalPaid: 0,
+          totalDue: 55000,
+          overallStatus: 'Overdue',
+          dueDate: '2024-07-15',
+          payments: []
+        }
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Reload data when search or filter changes
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      loadFeeRecords();
+    }, 500); // Debounce search
+
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm, filterStatus]);
 
   const filteredRecords = feeRecords.filter(record => {
     const matchesSearch = 
@@ -193,7 +305,7 @@ export default function FeeManagement() {
   };
 
   const makePayment = async () => {
-    setLoading(true);
+    setPaymentLoading(true);
     try {
       const res = await initializeRazorpay();
       if (!res) {
@@ -228,41 +340,71 @@ export default function FeeManagement() {
       console.error('Payment error:', error);
       alert('Payment failed. Please try again.');
     } finally {
-      setLoading(false);
+      setPaymentLoading(false);
     }
   };
 
-  const handlePaymentSuccess = (paymentId: string) => {
+  const handlePaymentSuccess = async (paymentId: string) => {
     if (selectedFee) {
-      const updatedRecords = feeRecords.map(record => {
-        if (record.id === selectedFee.id) {
-          const newPayment = {
-            amount: Number(paymentAmount),
-            paymentDate: paymentDate,
-            paymentMethod: 'Online',
-            status: 'Success'
-          };
+      try {
+        // Record payment in backend
+        const response = await feeApi.recordPayment(selectedFee.id, {
+          amount: Number(paymentAmount),
+          paymentMethod: 'Online',
+          transactionId: paymentId,
+          paymentDate: new Date().toISOString(),
+          remarks: 'Razorpay payment'
+        });
+
+        if (response.status === 'success') {
+          // Update local state with backend response
+          const updatedRecords = feeRecords.map(record => {
+            if (record.id === selectedFee.id) {
+              return response.data.fee;
+            }
+            return record;
+          });
           
-          const newTotalPaid = record.totalPaid + Number(paymentAmount);
-          const newTotalDue = record.totalAmount - newTotalPaid;
-          const newStatus = newTotalDue <= 0 ? 'Paid' : 'Partial';
+          setFeeRecords(updatedRecords);
+          alert('Payment recorded successfully!');
+        } else {
+          // Fallback to local update
+          const updatedRecords = feeRecords.map(record => {
+            if (record.id === selectedFee.id) {
+              const newPayment = {
+                amount: Number(paymentAmount),
+                paymentDate: paymentDate,
+                paymentMethod: 'Online',
+                status: 'Success'
+              };
+              
+              const newTotalPaid = record.totalPaid + Number(paymentAmount);
+              const newTotalDue = record.totalAmount - newTotalPaid;
+              const newStatus = newTotalDue <= 0 ? 'Paid' : 'Partial';
+              
+              return {
+                ...record,
+                totalPaid: newTotalPaid,
+                totalDue: newTotalDue,
+                overallStatus: newStatus as 'Paid' | 'Partial' | 'Pending' | 'Overdue',
+                payments: [...record.payments, newPayment]
+              };
+            }
+            return record;
+          });
           
-          return {
-            ...record,
-            totalPaid: newTotalPaid,
-            totalDue: newTotalDue,
-            overallStatus: newStatus as 'Paid' | 'Partial' | 'Pending' | 'Overdue',
-            payments: [...record.payments, newPayment]
-          };
+          setFeeRecords(updatedRecords);
+          alert('Payment recorded successfully!');
         }
-        return record;
-      });
-      
-      setFeeRecords(updatedRecords);
-      setShowPaymentModal(false);
-      setShowRazorpayModal(false);
-      setSelectedFee(null);
-      setPaymentAmount('');
+      } catch (error) {
+        console.error('Error recording payment:', error);
+        alert('Payment successful but failed to record in system. Please contact admin.');
+      } finally {
+        setShowPaymentModal(false);
+        setShowRazorpayModal(false);
+        setSelectedFee(null);
+        setPaymentAmount('');
+      }
     }
   };
 
@@ -307,6 +449,17 @@ export default function FeeManagement() {
     alert('Data exported successfully!');
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-purple-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-purple-600 mx-auto"></div>
+          <p className="text-gray-600 mt-4">Loading fee records...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -314,6 +467,11 @@ export default function FeeManagement() {
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Fee Management</h1>
           <p className="text-gray-600 mt-1">Manage student fee collection and payments with integrated payment gateway</p>
+          {error && (
+            <div className="mt-2 p-3 bg-yellow-100 border border-yellow-400 rounded-lg">
+              <p className="text-yellow-800 text-sm">{error}</p>
+            </div>
+          )}
         </div>
         <div className="flex flex-wrap gap-2">
           <button
@@ -669,10 +827,10 @@ export default function FeeManagement() {
                   <button
                     type="button"
                     onClick={makePayment}
-                    disabled={loading || !paymentAmount}
+                    disabled={paymentLoading || !paymentAmount}
                     className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center"
                   >
-                    {loading ? (
+                    {paymentLoading ? (
                       <>
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                         Processing...

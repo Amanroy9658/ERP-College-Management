@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
 const User = require('../models/User');
 const Course = require('../models/Course');
+const Student = require('../models/Student');
 const auth = require('../middleware/auth');
 
 const router = express.Router();
@@ -220,24 +221,24 @@ router.post('/login', [
 });
 
 // @route   GET /api/auth/me
-// @desc    Get current student profile
+// @desc    Get current user profile
 // @access  Private
 router.get('/me', auth, async (req, res) => {
   try {
-    const student = await Student.findById(req.student.id)
-      .populate('course', 'courseName courseCode department')
+    const user = await User.findById(req.user.id)
+      .populate('studentInfo.course', 'courseName courseCode department')
       .select('-password');
 
-    if (!student) {
+    if (!user) {
       return res.status(404).json({
         status: 'error',
-        message: 'Student not found'
+        message: 'User not found'
       });
     }
 
     res.json({
       status: 'success',
-      data: { student }
+      data: { user }
     });
 
   } catch (error) {
@@ -250,7 +251,7 @@ router.get('/me', auth, async (req, res) => {
 });
 
 // @route   PUT /api/auth/profile
-// @desc    Update student profile
+// @desc    Update user profile
 // @access  Private
 router.put('/profile', auth, [
   body('firstName').optional().notEmpty().withMessage('First name cannot be empty'),
@@ -268,8 +269,7 @@ router.put('/profile', auth, [
     }
 
     const allowedUpdates = [
-      'firstName', 'lastName', 'phone', 'dateOfBirth', 'gender',
-      'address', 'guardian', 'profilePicture'
+      'firstName', 'lastName', 'phone', 'profilePicture'
     ];
 
     const updates = {};
@@ -279,23 +279,23 @@ router.put('/profile', auth, [
       }
     });
 
-    const student = await Student.findByIdAndUpdate(
-      req.student.id,
+    const user = await User.findByIdAndUpdate(
+      req.user.id,
       updates,
       { new: true, runValidators: true }
     ).select('-password');
 
-    if (!student) {
+    if (!user) {
       return res.status(404).json({
         status: 'error',
-        message: 'Student not found'
+        message: 'User not found'
       });
     }
 
     res.json({
       status: 'success',
       message: 'Profile updated successfully',
-      data: { student }
+      data: { user }
     });
 
   } catch (error) {
@@ -308,7 +308,7 @@ router.put('/profile', auth, [
 });
 
 // @route   POST /api/auth/change-password
-// @desc    Change student password
+// @desc    Change user password
 // @access  Private
 router.post('/change-password', auth, [
   body('currentPassword').notEmpty().withMessage('Current password is required'),
@@ -326,16 +326,16 @@ router.post('/change-password', auth, [
 
     const { currentPassword, newPassword } = req.body;
 
-    const student = await Student.findById(req.student.id).select('+password');
-    if (!student) {
+    const user = await User.findById(req.user.id).select('+password');
+    if (!user) {
       return res.status(404).json({
         status: 'error',
-        message: 'Student not found'
+        message: 'User not found'
       });
     }
 
     // Check current password
-    const isCurrentPasswordValid = await student.comparePassword(currentPassword);
+    const isCurrentPasswordValid = await user.comparePassword(currentPassword);
     if (!isCurrentPasswordValid) {
       return res.status(400).json({
         status: 'error',
@@ -344,8 +344,8 @@ router.post('/change-password', auth, [
     }
 
     // Update password
-    student.password = newPassword;
-    await student.save();
+    user.password = newPassword;
+    await user.save();
 
     res.json({
       status: 'success',

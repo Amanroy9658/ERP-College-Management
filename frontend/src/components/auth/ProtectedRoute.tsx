@@ -19,14 +19,18 @@ export default function ProtectedRoute({
   const router = useRouter();
 
   useEffect(() => {
+    console.log('ProtectedRoute - loading:', loading, 'isAuthenticated:', isAuthenticated, 'user:', user, 'allowedRoles:', allowedRoles);
+    
     if (loading) return;
 
     if (requireAuth && !isAuthenticated) {
+      console.log('Redirecting to login - not authenticated');
       router.push('/login');
       return;
     }
 
     if (requireAuth && allowedRoles.length > 0 && user && !allowedRoles.includes(user.role)) {
+      console.log('Redirecting based on role - user role:', user.role, 'allowed roles:', allowedRoles);
       // Redirect to appropriate dashboard based on user role
       switch (user.role) {
         case 'admin':

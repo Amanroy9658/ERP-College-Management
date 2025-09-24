@@ -36,6 +36,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     checkAuthStatus();
   }, []);
 
+  const redirectBasedOnRole = (role: string) => {
+    switch (role) {
+      case 'admin':
+        router.push('/admin/dashboard');
+        break;
+      case 'student':
+        router.push('/student/dashboard');
+        break;
+      case 'teacher':
+        router.push('/teacher/dashboard');
+        break;
+      case 'librarian':
+        router.push('/librarian/dashboard');
+        break;
+      case 'warden':
+        router.push('/warden/dashboard');
+        break;
+      case 'accountant':
+        router.push('/accountant/dashboard');
+        break;
+      default:
+        router.push('/dashboard');
+    }
+  };
+
   const checkAuthStatus = async () => {
     try {
       const token = localStorage.getItem('token');
@@ -44,10 +69,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
 
+      // Check if user data is already in localStorage
+      const storedUser = localStorage.getItem('user');
+      if (storedUser) {
+        const userData = JSON.parse(storedUser);
+        setUser(userData);
+        setLoading(false);
+        return;
+      }
+
       // Verify token with backend
       const response = await authApi.getProfile();
       if (response.status === 'success' && response.data) {
-        setUser(response.data);
+        setUser(response.data.user);
       } else {
         // Token is invalid, remove it
         localStorage.removeItem('token');
@@ -69,6 +103,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       if (response.status === 'success' && response.data) {
         const { token, user: userData } = response.data;
+        
+        console.log('Login successful, user data:', userData);
+        console.log('User role:', userData.role);
+        console.log('User status:', userData.status);
         
         // Store token and user data
         localStorage.setItem('token', token);
@@ -96,31 +134,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem('user');
     setUser(null);
     router.push('/login');
-  };
-
-  const redirectBasedOnRole = (role: string) => {
-    switch (role) {
-      case 'admin':
-        router.push('/admin/dashboard');
-        break;
-      case 'student':
-        router.push('/student/dashboard');
-        break;
-      case 'teacher':
-        router.push('/teacher/dashboard');
-        break;
-      case 'librarian':
-        router.push('/librarian/dashboard');
-        break;
-      case 'warden':
-        router.push('/warden/dashboard');
-        break;
-      case 'accountant':
-        router.push('/accountant/dashboard');
-        break;
-      default:
-        router.push('/');
-    }
   };
 
   const isAuthenticated = !!user;
