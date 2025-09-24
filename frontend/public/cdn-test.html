@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CDN Tailwind Test</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        purple: {
+                            50: '#FAF5FF',
+                            100: '#F3E8FF',
+                            200: '#E9D5FF',
+                            300: '#D8B4FE',
+                            400: '#C084FC',
+                            500: '#A855F7',
+                            600: '#9333EA',
+                            700: '#7C3AED',
+                            800: '#6B21A8',
+                            900: '#581C87',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-purple-100 min-h-screen flex items-center justify-center p-4">
+    <div class="bg-white p-8 rounded-lg shadow-lg max-w-md w-full">
+        <h1 class="text-purple-600 text-2xl font-bold mb-4 text-center">
+            CDN Tailwind Test
+        </h1>
+        
+        <div class="space-y-4">
+            <button class="w-full bg-purple-600 text-white py-2 px-4 rounded hover:bg-purple-700 transition-colors">
+                Purple Button
+            </button>
+            
+            <div class="bg-purple-50 p-4 rounded border border-purple-200">
+                <p class="text-purple-800 text-center">
+                    If you can see purple colors, CDN Tailwind is working!
+                </p>
+            </div>
+            
+            <div class="flex space-x-2 justify-center">
+                <div class="w-8 h-8 bg-purple-200 rounded"></div>
+                <div class="w-8 h-8 bg-purple-400 rounded"></div>
+                <div class="w-8 h-8 bg-purple-600 rounded"></div>
+                <div class="w-8 h-8 bg-purple-800 rounded"></div>
+            </div>
+            
+            <div class="text-center">
+                <p class="text-sm text-gray-600">
+                    This uses CDN Tailwind CSS - should work immediately
+                </p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
