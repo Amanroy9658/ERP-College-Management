@@ -5,6 +5,8 @@ const User = require('../models/User');
 const Course = require('../models/Course');
 const Student = require('../models/Student');
 const auth = require('../middleware/auth');
+const emailService = require('../services/emailService');
+const smsService = require('../services/smsService');
 
 const router = express.Router();
 
@@ -96,9 +98,48 @@ router.post('/register', [
       };
     }
 
+    // Generate unique ID for students
+    if (role === 'student') {
+      const studentCount = await User.countDocuments({ role: 'student' });
+      userData.studentInfo = {
+        ...userData.studentInfo,
+        studentId: `STU${String(studentCount + 1).padStart(3, '0')}`,
+        rollNumber: `R${String(studentCount + 1).padStart(4, '0')}`,
+        admissionDate: new Date()
+      };
+    }
+
     // Create new user
     const user = new User(userData);
     await user.save();
+
+    // Create notification for admin
+    try {
+      const Notification = require('../models/Notification');
+      const adminUsers = await User.find({ role: 'admin', status: 'approved' });
+      
+      for (const admin of adminUsers) {
+        await Notification.create({
+          recipient: admin._id,
+          type: 'info',
+          title: 'New User Registration',
+          message: `${user.firstName} ${user.lastName} (${user.role}) has registered and is pending approval.`,
+          actionUrl: '/admin/dashboard?tab=pending'
+        });
+      }
+    } catch (notificationError) {
+      console.error('Error creating notification:', notificationError);
+      // Don't fail registration if notification creation fails
+    }
+
+    // Send welcome email and SMS
+    try {
+      await emailService.sendWelcomeEmail(user);
+      await smsService.sendWelcomeSMS(user);
+    } catch (emailSmsError) {
+      console.error('Error sending welcome email/SMS:', emailSmsError);
+      // Don't fail registration if email/SMS fails
+    }
 
     res.status(201).json({
       status: 'success',
@@ -117,9 +158,29 @@ router.post('/register', [
 
   } catch (error) {
     console.error('Registration error:', error);
+    
+    // Handle specific MongoDB errors
+    if (error.code === 11000) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'User with this email already exists'
+      });
+    }
+    
+    // Handle validation errors
+    if (error.name === 'ValidationError') {
+      const errors = Object.values(error.errors).map(err => err.message);
+      return res.status(400).json({
+        status: 'error',
+        message: 'Validation failed',
+        errors: errors
+      });
+    }
+    
     res.status(500).json({
       status: 'error',
-      message: 'Server error during registration'
+      message: 'Server error during registration',
+      ...(process.env.NODE_ENV === 'development' && { details: error.message })
     });
   }
 });

@@ -41,6 +41,11 @@ const userSchema = new mongoose.Schema({
     default: 'pending'
   },
   
+  // Role-specific Information (for registration)
+  roleSpecificInfo: {
+    type: mongoose.Schema.Types.Mixed
+  },
+  
   // Role-specific Information
   studentInfo: {
     studentId: String,

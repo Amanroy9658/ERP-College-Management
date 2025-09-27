@@ -78,6 +78,35 @@ router.post('/approve-user/:userId', auth, async (req, res) => {
 
     await user.save();
 
+    // Create notification for the user
+    try {
+      const Notification = require('../models/Notification');
+      await Notification.create({
+        recipient: user._id,
+        type: action === 'approve' ? 'success' : 'error',
+        title: `Account ${action === 'approve' ? 'Approved' : 'Rejected'}`,
+        message: action === 'approve' 
+          ? 'Your account has been approved! You can now log in to access your dashboard.'
+          : `Your account has been rejected. Reason: ${reason || 'No reason provided'}`,
+        actionUrl: action === 'approve' ? `/${user.role}/dashboard` : '/login'
+      });
+    } catch (notificationError) {
+      console.error('Error creating notification:', notificationError);
+      // Don't fail approval if notification creation fails
+    }
+
+    // Send approval/rejection email and SMS
+    try {
+      const emailService = require('../services/emailService');
+      const smsService = require('../services/smsService');
+      
+      await emailService.sendApprovalEmail(user, action === 'approve');
+      await smsService.sendApprovalSMS(user, action === 'approve');
+    } catch (emailSmsError) {
+      console.error('Error sending approval email/SMS:', emailSmsError);
+      // Don't fail approval if email/SMS fails
+    }
+
     res.json({
       status: 'success',
       message: `User ${action}d successfully`,
