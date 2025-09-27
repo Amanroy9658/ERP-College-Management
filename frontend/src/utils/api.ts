@@ -241,16 +241,37 @@ export const libraryApi = {
     apiClient.get('/library/issues', params),
   
   issueBook: (data: any) =>
-    apiClient.post('/library/issues', data),
+    apiClient.post('/library/issue', data),
   
-  returnBook: (id: string, data: any) =>
-    apiClient.put(`/library/issues/${id}/return`, data),
+  returnBook: (data: any) =>
+    apiClient.post('/library/return', data),
   
-  renewBook: (id: string, data: any) =>
-    apiClient.put(`/library/issues/${id}/renew`, data),
+  renewBook: (data: any) =>
+    apiClient.post('/library/renew', data),
   
-  getLibraryStats: () =>
+  getStats: () =>
     apiClient.get('/library/stats'),
+};
+
+// Notification API functions
+export const notificationApi = {
+  getNotifications: (params?: any) =>
+    apiClient.get('/notifications', params),
+  
+  createNotification: (data: any) =>
+    apiClient.post('/notifications', data),
+  
+  markAsRead: (id: string) =>
+    apiClient.put(`/notifications/${id}/read`),
+  
+  markAllAsRead: () =>
+    apiClient.put('/notifications/read-all'),
+  
+  deleteNotification: (id: string) =>
+    apiClient.delete(`/notifications/${id}`),
+  
+  getStats: () =>
+    apiClient.get('/notifications/stats'),
 };
 
 // Examination Management API functions

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Bell, X, CheckCircle, AlertTriangle, Info, XCircle } from 'lucide-react';
+import { notificationApi } from '../../utils/api';
 
 interface Notification {
   id: string;
@@ -26,57 +27,57 @@ export default function NotificationCenter({ isOpen, onClose }: NotificationCent
   const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
-    // Mock notifications - replace with real API calls
-    const mockNotifications: Notification[] = [
-      {
-        id: '1',
-        type: 'success',
-        title: 'Payment Received',
-        message: 'Tuition fee payment of ₹50,000 received from John Doe',
-        timestamp: new Date(Date.now() - 1000 * 60 * 30), // 30 minutes ago
-        read: false,
-        action: {
-          label: 'View Receipt',
-          url: '/accountant/payments'
-        }
-      },
-      {
-        id: '2',
-        type: 'warning',
-        title: 'Overdue Fee',
-        message: 'Library fee overdue for Jane Smith (₹500)',
-        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2), // 2 hours ago
-        read: false,
-        action: {
-          label: 'Send Reminder',
-          url: '/librarian/fines'
-        }
-      },
-      {
-        id: '3',
-        type: 'info',
-        title: 'New Registration',
-        message: 'New student registration pending approval',
-        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 4), // 4 hours ago
-        read: true,
-        action: {
-          label: 'Review',
-          url: '/admin/dashboard'
-        }
-      },
-      {
-        id: '4',
-        type: 'error',
-        title: 'System Maintenance',
-        message: 'Scheduled maintenance on Sunday 2 AM - 4 AM',
-        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24), // 1 day ago
-        read: true
-      }
-    ];
+    loadNotifications();
+    
+    // Set up real-time updates every 5 seconds
+    const interval = setInterval(() => {
+      loadNotifications();
+    }, 5000);
 
-    setNotifications(mockNotifications);
-    setUnreadCount(mockNotifications.filter(n => !n.read).length);
+    return () => clearInterval(interval);
   }, []);
+
+  const loadNotifications = async () => {
+    try {
+      const response = await notificationApi.getNotifications();
+      if (response.status === 'success') {
+        const formattedNotifications = response.data.notifications.map((notification: any) => ({
+          id: notification._id,
+          type: notification.type,
+          title: notification.title,
+          message: notification.message,
+          timestamp: new Date(notification.createdAt),
+          read: notification.read,
+          action: notification.actionUrl ? {
+            label: 'View Details',
+            url: notification.actionUrl
+          } : undefined
+        }));
+        
+        setNotifications(formattedNotifications);
+        setUnreadCount(response.data.unreadCount);
+      }
+    } catch (error) {
+      console.error('Error loading notifications:', error);
+      // Fallback to mock data if API fails
+      const mockNotifications: Notification[] = [
+        {
+          id: '1',
+          type: 'success',
+          title: 'Payment Received',
+          message: 'Tuition fee payment of ₹50,000 received from John Doe',
+          timestamp: new Date(Date.now() - 1000 * 60 * 30),
+          read: false,
+          action: {
+            label: 'View Receipt',
+            url: '/accountant/payments'
+          }
+        }
+      ];
+      setNotifications(mockNotifications);
+      setUnreadCount(1);
+    }
+  };
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
@@ -108,26 +109,41 @@ export default function NotificationCenter({ isOpen, onClose }: NotificationCent
     }
   };
 
-  const markAsRead = (id: string) => {
-    setNotifications(prev => 
-      prev.map(notification => 
-        notification.id === id 
-          ? { ...notification, read: true }
-          : notification
-      )
-    );
-    setUnreadCount(prev => Math.max(0, prev - 1));
+  const markAsRead = async (id: string) => {
+    try {
+      await notificationApi.markAsRead(id);
+      setNotifications(prev => 
+        prev.map(notification => 
+          notification.id === id 
+            ? { ...notification, read: true }
+            : notification
+        )
+      );
+      setUnreadCount(prev => Math.max(0, prev - 1));
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+    }
   };
 
-  const markAllAsRead = () => {
-    setNotifications(prev => 
-      prev.map(notification => ({ ...notification, read: true }))
-    );
-    setUnreadCount(0);
+  const markAllAsRead = async () => {
+    try {
+      await notificationApi.markAllAsRead();
+      setNotifications(prev => 
+        prev.map(notification => ({ ...notification, read: true }))
+      );
+      setUnreadCount(0);
+    } catch (error) {
+      console.error('Error marking all notifications as read:', error);
+    }
   };
 
-  const deleteNotification = (id: string) => {
-    setNotifications(prev => prev.filter(notification => notification.id !== id));
+  const deleteNotification = async (id: string) => {
+    try {
+      await notificationApi.deleteNotification(id);
+      setNotifications(prev => prev.filter(notification => notification.id !== id));
+    } catch (error) {
+      console.error('Error deleting notification:', error);
+    }
   };
 
   const formatTimestamp = (timestamp: Date) => {

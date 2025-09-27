@@ -56,9 +56,19 @@ export default function LoginPage() {
       if (!success) {
         setError('Login failed. Please check your credentials.');
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Login error:', err);
-      setError('Network error. Please try again.');
+      
+      // Handle specific error cases
+      if (err.message && err.message.includes('pending')) {
+        setError('Your account is pending approval. Please wait for admin approval.');
+      } else if (err.message && err.message.includes('rejected')) {
+        setError('Your account has been rejected. Please contact admin for more information.');
+      } else if (err.message && err.message.includes('Invalid credentials')) {
+        setError('Invalid email or password. Please check your credentials.');
+      } else {
+        setError('Network error. Please try again.');
+      }
     } finally {
       setLoading(false);
     }

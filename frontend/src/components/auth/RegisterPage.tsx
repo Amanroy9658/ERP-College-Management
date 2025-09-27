@@ -106,9 +106,13 @@ export default function RegisterPage() {
     
     // Role-specific validation
     if (formData.role === 'student') {
-      const { course, semester, academicYear } = formData.roleSpecificInfo;
+      const { course, semester, academicYear, guardian } = formData.roleSpecificInfo;
       if (!course || !semester || !academicYear) {
         setError('Please fill all student-specific fields');
+        return false;
+      }
+      if (!guardian?.name || !guardian?.relationship || !guardian?.phone || !guardian?.email) {
+        setError('Please fill all guardian information');
         return false;
       }
     }
@@ -133,6 +137,7 @@ export default function RegisterPage() {
       const response = await authApi.register(formData);
 
       if (response.status === 'success') {
+        alert('Registration successful! Your account is pending approval. You will be notified once approved.');
         router.push('/login?message=Registration successful! Please wait for admin approval.');
       } else {
         setError(response.message || 'Registration failed');
@@ -405,9 +410,9 @@ export default function RegisterPage() {
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                         >
                           <option value="">Select Course</option>
-                          <option value="CS">Computer Science</option>
-                          <option value="BA">Business Administration</option>
-                          <option value="EN">Engineering</option>
+                          <option value="68d8078a653a296d63746ec8">Computer Science</option>
+                          <option value="68d8078a653a296d63746ec9">Business Administration</option>
+                          <option value="68d8078a653a296d63746eca">Engineering</option>
                         </select>
                       </div>
                       <div>
@@ -443,6 +448,48 @@ export default function RegisterPage() {
                             name: e.target.value
                           })}
                           placeholder="Guardian's name"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Relationship</label>
+                        <select
+                          value={formData.roleSpecificInfo.guardian?.relationship || ''}
+                          onChange={(e) => handleRoleSpecificChange('guardian', {
+                            ...formData.roleSpecificInfo.guardian,
+                            relationship: e.target.value
+                          })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        >
+                          <option value="">Select Relationship</option>
+                          <option value="Father">Father</option>
+                          <option value="Mother">Mother</option>
+                          <option value="Guardian">Guardian</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Guardian Phone</label>
+                        <input
+                          type="text"
+                          value={formData.roleSpecificInfo.guardian?.phone || ''}
+                          onChange={(e) => handleRoleSpecificChange('guardian', {
+                            ...formData.roleSpecificInfo.guardian,
+                            phone: e.target.value
+                          })}
+                          placeholder="Guardian's phone"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Guardian Email</label>
+                        <input
+                          type="email"
+                          value={formData.roleSpecificInfo.guardian?.email || ''}
+                          onChange={(e) => handleRoleSpecificChange('guardian', {
+                            ...formData.roleSpecificInfo.guardian,
+                            email: e.target.value
+                          })}
+                          placeholder="Guardian's email"
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                         />
                       </div>

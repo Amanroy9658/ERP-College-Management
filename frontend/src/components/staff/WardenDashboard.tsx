@@ -26,7 +26,7 @@ import {
   MapPin,
   Bed
 } from 'lucide-react';
-import { dashboardApi } from '../../utils/api';
+import { dashboardApi, authApi } from '../../utils/api';
 
 interface HostelInfo {
   id: string;
@@ -86,6 +86,13 @@ export default function WardenDashboard() {
 
   const fetchWardenData = async () => {
     try {
+      // Fetch real user data
+      const profileResponse = await authApi.getProfile();
+      if (profileResponse.status === 'success' && profileResponse.data) {
+        const user = profileResponse.data.user;
+        console.log('Warden user data:', user);
+      }
+
       // Mock data - replace with actual API calls
       const mockHostels: HostelInfo[] = [
         {

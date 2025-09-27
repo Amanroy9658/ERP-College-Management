@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { libraryApi } from '../utils/api';
 import { 
   BookOpen, 
   Plus, 
@@ -58,83 +59,10 @@ interface IssueRecord {
 }
 
 export default function LibraryManagement() {
-  const [books, setBooks] = useState<Book[]>([
-    {
-      id: '1',
-      title: 'Introduction to Algorithms',
-      author: 'Thomas H. Cormen',
-      isbn: '978-0262033848',
-      category: 'Computer Science',
-      publisher: 'MIT Press',
-      publicationYear: 2009,
-      totalCopies: 5,
-      availableCopies: 3,
-      location: 'CS-001',
-      status: 'Available',
-      addedDate: '2024-01-15'
-    },
-    {
-      id: '2',
-      title: 'Clean Code',
-      author: 'Robert C. Martin',
-      isbn: '978-0132350884',
-      category: 'Programming',
-      publisher: 'Prentice Hall',
-      publicationYear: 2008,
-      totalCopies: 3,
-      availableCopies: 1,
-      location: 'CS-002',
-      status: 'Available',
-      addedDate: '2024-01-20'
-    },
-    {
-      id: '3',
-      title: 'The Design of Everyday Things',
-      author: 'Don Norman',
-      isbn: '978-0465050659',
-      category: 'Design',
-      publisher: 'Basic Books',
-      publicationYear: 2013,
-      totalCopies: 2,
-      availableCopies: 0,
-      location: 'DES-001',
-      status: 'Issued',
-      addedDate: '2024-02-01'
-    }
-  ]);
-
-  const [issueRecords, setIssueRecords] = useState<IssueRecord[]>([
-    {
-      id: '1',
-      book: books[2],
-      student: {
-        studentId: 'STU001',
-        firstName: 'John',
-        lastName: 'Doe',
-        email: 'john.doe@example.com'
-      },
-      issueDate: '2024-08-01',
-      dueDate: '2024-08-15',
-      status: 'Overdue',
-      fine: 50,
-      renewed: false
-    },
-    {
-      id: '2',
-      book: books[1],
-      student: {
-        studentId: 'STU002',
-        firstName: 'Jane',
-        lastName: 'Smith',
-        email: 'jane.smith@example.com'
-      },
-      issueDate: '2024-08-10',
-      dueDate: '2024-08-24',
-      status: 'Active',
-      fine: 0,
-      renewed: false
-    }
-  ]);
+  const [books, setBooks] = useState<Book[]>([]);
+  const [issueRecords, setIssueRecords] = useState<IssueRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState('All');
@@ -145,6 +73,49 @@ export default function LibraryManagement() {
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
   const [selectedIssue, setSelectedIssue] = useState<IssueRecord | null>(null);
   const [activeTab, setActiveTab] = useState('books');
+
+  // Load data on component mount
+  useEffect(() => {
+    loadBooks();
+    loadIssueRecords();
+  }, []);
+
+  const loadBooks = async () => {
+    try {
+      setLoading(true);
+      const response = await libraryApi.getBooks({
+        search: searchTerm,
+        category: filterCategory !== 'All' ? filterCategory : undefined,
+        status: filterStatus !== 'All' ? filterStatus : undefined
+      });
+      
+      if (response.status === 'success') {
+        setBooks(response.data.books);
+      }
+    } catch (err) {
+      console.error('Error loading books:', err);
+      setError('Failed to load books');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadIssueRecords = async () => {
+    try {
+      const response = await libraryApi.getIssueRecords();
+      
+      if (response.status === 'success') {
+        setIssueRecords(response.data.issues);
+      }
+    } catch (err) {
+      console.error('Error loading issue records:', err);
+    }
+  };
+
+  // Reload data when filters change
+  useEffect(() => {
+    loadBooks();
+  }, [searchTerm, filterCategory, filterStatus]);
 
   const filteredBooks = books.filter(book => {
     const matchesSearch = 

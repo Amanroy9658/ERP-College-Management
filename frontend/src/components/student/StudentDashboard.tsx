@@ -22,7 +22,7 @@ import {
   Building2,
   Library
 } from 'lucide-react';
-import { dashboardApi } from '../../utils/api';
+import { dashboardApi, authApi } from '../../utils/api';
 
 interface StudentInfo {
   studentId: string;
@@ -84,17 +84,28 @@ export default function StudentDashboard() {
 
   const fetchStudentData = async () => {
     try {
-      // Mock data - replace with actual API calls
-      const mockStudentInfo: StudentInfo = {
-        studentId: 'STU001',
-        firstName: 'John',
-        lastName: 'Doe',
-        email: 'john.doe@example.com',
-        course: 'Computer Science',
-        semester: 3,
-        academicYear: '2024-25',
-        admissionDate: '2023-08-15'
-      };
+      // Fetch real user data
+      const profileResponse = await authApi.getProfile();
+      let studentInfo: StudentInfo | null = null;
+      
+      if (profileResponse.status === 'success' && profileResponse.data) {
+        const user = profileResponse.data.user;
+        studentInfo = {
+          studentId: user.studentInfo?.studentId || 'N/A',
+          firstName: user.firstName || 'N/A',
+          lastName: user.lastName || 'N/A',
+          email: user.email || 'N/A',
+          course: user.studentInfo?.course?.courseName || 'N/A',
+          semester: user.studentInfo?.semester || 0,
+          academicYear: user.studentInfo?.academicYear || 'N/A',
+          admissionDate: user.studentInfo?.admissionDate || new Date().toISOString()
+        };
+      }
+
+      // Set student info
+      if (studentInfo) {
+        setStudentInfo(studentInfo);
+      }
 
       const mockExams: ExamInfo[] = [
         {

@@ -66,9 +66,19 @@ export default function AdminDashboard() {
   const [filterRole, setFilterRole] = useState('All');
   const [selectedUser, setSelectedUser] = useState<PendingUser | null>(null);
   const [showApprovalModal, setShowApprovalModal] = useState(false);
+  const [approvingUser, setApprovingUser] = useState<string | null>(null);
+  const [rejectingUser, setRejectingUser] = useState<string | null>(null);
+  const [rejectReason, setRejectReason] = useState('');
 
   useEffect(() => {
     fetchDashboardData();
+    
+    // Set up real-time updates every 10 seconds
+    const interval = setInterval(() => {
+      fetchDashboardData();
+    }, 10000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const fetchDashboardData = async () => {
@@ -152,6 +162,63 @@ export default function AdminDashboard() {
       setPendingUsers(mockPendingUsers);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleApproveUser = async (userId: string) => {
+    try {
+      setApprovingUser(userId);
+      const response = await adminApi.approveUser(userId, { action: 'approve' });
+      
+      if (response.status === 'success') {
+        // Remove user from pending list
+        setPendingUsers(prev => prev.filter(user => user.id !== userId));
+        // Update stats
+        if (stats) {
+          setStats(prev => prev ? { ...prev, pendingApprovals: prev.pendingApprovals - 1, approvedUsers: prev.approvedUsers + 1 } : null);
+        }
+        alert('User approved successfully!');
+      } else {
+        alert('Failed to approve user: ' + response.message);
+      }
+    } catch (error) {
+      console.error('Error approving user:', error);
+      alert('Error approving user. Please try again.');
+    } finally {
+      setApprovingUser(null);
+    }
+  };
+
+  const handleRejectUser = async (userId: string) => {
+    if (!rejectReason.trim()) {
+      alert('Please provide a reason for rejection.');
+      return;
+    }
+
+    try {
+      setRejectingUser(userId);
+      const response = await adminApi.approveUser(userId, { 
+        action: 'reject', 
+        reason: rejectReason 
+      });
+      
+      if (response.status === 'success') {
+        // Remove user from pending list
+        setPendingUsers(prev => prev.filter(user => user.id !== userId));
+        // Update stats
+        if (stats) {
+          setStats(prev => prev ? { ...prev, pendingApprovals: prev.pendingApprovals - 1, rejectedUsers: prev.rejectedUsers + 1 } : null);
+        }
+        alert('User rejected successfully!');
+        setRejectReason('');
+      } else {
+        alert('Failed to reject user: ' + response.message);
+      }
+    } catch (error) {
+      console.error('Error rejecting user:', error);
+      alert('Error rejecting user. Please try again.');
+    } finally {
+      setRejectingUser(null);
     }
   };
 
@@ -466,16 +533,34 @@ export default function AdminDashboard() {
                           <Eye className="h-4 w-4" />
                         </button>
                         <button
-                          onClick={() => handleApprove(user.id, 'approve')}
-                          className="text-purple-600 hover:text-purple-900"
+                          onClick={() => handleApproveUser(user.id)}
+                          disabled={approvingUser === user.id}
+                          className="text-green-600 hover:text-green-900 disabled:opacity-50"
+                          title="Approve User"
                         >
-                          <CheckCircle className="h-4 w-4" />
+                          {approvingUser === user.id ? (
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-600"></div>
+                          ) : (
+                            <CheckCircle className="h-4 w-4" />
+                          )}
                         </button>
                         <button
-                          onClick={() => handleApprove(user.id, 'reject')}
-                          className="text-purple-600 hover:text-purple-900"
+                          onClick={() => {
+                            const reason = prompt('Please provide a reason for rejection:');
+                            if (reason) {
+                              setRejectReason(reason);
+                              handleRejectUser(user.id);
+                            }
+                          }}
+                          disabled={rejectingUser === user.id}
+                          className="text-red-600 hover:text-red-900 disabled:opacity-50"
+                          title="Reject User"
                         >
-                          <XCircle className="h-4 w-4" />
+                          {rejectingUser === user.id ? (
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-600"></div>
+                          ) : (
+                            <XCircle className="h-4 w-4" />
+                          )}
                         </button>
                       </div>
                     </td>

@@ -23,7 +23,7 @@ import {
   BarChart3,
   PieChart
 } from 'lucide-react';
-import { dashboardApi } from '../../utils/api';
+import { dashboardApi, courseApi, examinationApi, studentApi, authApi } from '../../utils/api';
 
 interface TeacherInfo {
   teacherId: string;
@@ -83,17 +83,28 @@ export default function TeacherDashboard() {
 
   const fetchTeacherData = async () => {
     try {
-      // Mock data - replace with actual API calls
-      const mockTeacherInfo: TeacherInfo = {
-        teacherId: 'TCH001',
-        firstName: 'Dr. Sarah',
-        lastName: 'Johnson',
-        email: 'sarah.johnson@college.edu',
-        department: 'Computer Science',
-        designation: 'Assistant Professor',
-        qualification: 'Ph.D. in Computer Science',
-        joinDate: '2020-08-15'
-      };
+      // Fetch real user data
+      const profileResponse = await authApi.getProfile();
+      let teacherInfo: TeacherInfo | null = null;
+      
+      if (profileResponse.status === 'success' && profileResponse.data) {
+        const user = profileResponse.data.user;
+        teacherInfo = {
+          teacherId: user.teacherInfo?.employeeId || 'N/A',
+          firstName: user.firstName || 'N/A',
+          lastName: user.lastName || 'N/A',
+          email: user.email || 'N/A',
+          department: user.teacherInfo?.department || 'N/A',
+          designation: user.teacherInfo?.designation || 'N/A',
+          qualification: user.teacherInfo?.qualification || 'N/A',
+          joinDate: user.teacherInfo?.joiningDate || new Date().toISOString()
+        };
+      }
+
+      // Set teacher info
+      if (teacherInfo) {
+        setTeacherInfo(teacherInfo);
+      }
 
       const mockClasses: ClassInfo[] = [
         {

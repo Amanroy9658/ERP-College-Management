@@ -26,7 +26,7 @@ import {
   TrendingUp,
   TrendingDown
 } from 'lucide-react';
-import { dashboardApi } from '../../utils/api';
+import { dashboardApi, authApi } from '../../utils/api';
 
 interface FeeInfo {
   id: string;
@@ -74,6 +74,13 @@ export default function AccountantDashboard() {
 
   const fetchAccountantData = async () => {
     try {
+      // Fetch real user data
+      const profileResponse = await authApi.getProfile();
+      if (profileResponse.status === 'success' && profileResponse.data) {
+        const user = profileResponse.data.user;
+        console.log('Accountant user data:', user);
+      }
+
       // Mock data - replace with actual API calls
       const mockFees: FeeInfo[] = [
         {

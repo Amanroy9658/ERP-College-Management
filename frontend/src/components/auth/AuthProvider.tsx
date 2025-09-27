@@ -121,9 +121,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else {
         throw new Error(response.message || 'Login failed');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Login error:', error);
-      return false;
+      
+      // Re-throw specific errors for better handling in LoginPage
+      if (error.message && error.message.includes('pending')) {
+        throw new Error('Account is pending. Please wait for admin approval.');
+      } else if (error.message && error.message.includes('rejected')) {
+        throw new Error('Account has been rejected. Please contact admin.');
+      } else if (error.message && error.message.includes('Invalid credentials')) {
+        throw new Error('Invalid credentials');
+      } else {
+        throw new Error(error.message || 'Login failed');
+      }
     } finally {
       setLoading(false);
     }
