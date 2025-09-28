@@ -76,3 +76,4 @@ bookSchema.index({ category: 1 });
 bookSchema.index({ status: 1 });
 
 module.exports = mongoose.model('Book', bookSchema);
+

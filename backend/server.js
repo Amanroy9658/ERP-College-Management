@@ -43,7 +43,7 @@ app.use('/api/', limiter);
 // CORS configuration
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
-    ? process.env.CORS_ORIGIN?.split(',') || ['https://yourdomain.com']
+    ? process.env.CORS_ORIGIN?.split(',') || ['https://erp-hc4pkszzm-alpha-1af73b27.vercel.app']
     : ['http://localhost:3000', 'http://localhost:3001'],
   credentials: true
 }));
